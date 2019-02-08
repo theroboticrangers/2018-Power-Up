@@ -1,0 +1,318 @@
+/*----------------------------------------------------------------------------*/
+/* Copyright (c) 2018-2019 FIRST. All Rights Reserved.                        */
+/* Open Source Software - may be modified and shared by FRC teams. The code   */
+/* must be accompanied by the FIRST BSD license file in the root directory of */
+/* the project.                                                               */
+/*----------------------------------------------------------------------------*/
+
+package org.usfirst.frc.team7155.robot;
+
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PWMTalonSRX;
+import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+public class Robot extends IterativeRobot {
+	
+	//Motor Controllers
+	Spark left = new Spark(6);
+	Spark right = new Spark(0);
+	PWMTalonSRX chainMotor = new PWMTalonSRX(3);
+	PWMTalonSRX leftLine = new PWMTalonSRX(5);
+	PWMTalonSRX rightLine = new PWMTalonSRX(4);
+	PWMTalonSRX lift = new PWMTalonSRX(2);
+	
+	//MISC Devices
+	AnalogGyro gyro1 = new AnalogGyro (0) ;
+	Encoder encoderLeft = new Encoder(3, 4, true, Encoder.EncodingType.k2X);
+	Encoder encoderRight = new Encoder(1, 2, false, Encoder.EncodingType.k2X); 
+	Encoder encoder3 = new Encoder(5, 6, true, Encoder.EncodingType.k2X);
+	
+	
+	//Drive Systems
+	DifferentialDrive myDrive = new DifferentialDrive(left, right);
+	Joystick joy1 = new Joystick(0);
+	Joystick joy2 = new Joystick(1);
+	DriverStation fms = DriverStation.getInstance();
+	
+	//Global Utilities/Variables
+	double kP = 0.03;
+	double angle = gyro1.getAngle();
+	Timer autonTimer = new Timer();
+	Timer testTimer = new Timer();
+/*	int autonStep = 1;
+	final static int autonForw = 1;
+	final static int autonStop = 2;
+	final static int autonTurn = 3;
+	final static int autonDrpCb = 7;
+	final static int autonStopT = 8;
+	final static int autonForwT = 4;
+	final static int autonTurnT = 6;
+	final static int autonStopTh = 5;
+	final static int autonStrFor = 1;
+	final static int autonStrStp = 2;
+	final static int autonTrnLft = 3;
+	final static int autonTrnRht = 3;
+	final static int autonStpThr = 4;
+	final static int autonStrCbe = 5;
+	final static int autonStp = 6;
+	*/
+	int teamPosition;
+	String testSwitch = "L";
+	String switchData = DriverStation.getInstance().getGameSpecificMessage();
+	
+	public void robotInit() {
+		//Gyro Setup
+		gyro1.reset();
+		gyro1.initGyro();
+		gyro1.calibrate();
+		left.setSafetyEnabled(false);
+		right.setSafetyEnabled(false);
+		
+		UsbCamera usbCamera = CameraServer.getInstance().startAutomaticCapture(); 
+		usbCamera.setResolution(640, 480);
+	}
+	
+	public void autonomousInit() {
+		autonTimer.reset();
+		autonTimer.start();
+		teamPosition = fms.getLocation();
+		encoderLeft.reset();
+		encoderRight.reset();
+	}
+	
+	public void autonomousPeriodic() {
+		SmartDashboard.putNumber("Left Encoder", encoderLeft.getDistance());
+		SmartDashboard.putNumber("Right Encoder", encoderRight.getDistance());
+		SmartDashboard.putNumber("3rd Encoder", encoder3.getDistance());
+		
+		if((encoderLeft.getDistance() > -.1 ) && (encoderLeft.getDistance() < 870 )) {
+				myDrive.tankDrive(.55, .55);
+		} else if ((encoderRight.getDistance() >= 700 ) && (encoderRight.getDistance() < 1420)) {
+			myDrive.tankDrive(0, .7);
+		} else if ((encoderLeft.getDistance() >= 870 ) && (encoderLeft.getDistance() < 1715 )) {
+			myDrive.tankDrive(.55, .55);
+		} else if ((encoderLeft.getDistance() >= 1715 ) && (encoderLeft.getDistance() < 2320 )) {
+			myDrive.tankDrive(.7, 0);
+		} else if((encoderLeft.getDistance() >= 2320 ) && (encoderLeft.getDistance() < 3580 )) {
+				myDrive.tankDrive(.58, .55);
+		} else {
+			myDrive.tankDrive(0,0);
+		}
+	/*	} else if((encoderLeft.getDistance() >= 800 ) && (encoderLeft.getDistance() < 1600 )) {
+			myDrive.arcadeDrive(.5, angle*kP);
+		} else if((encoderLeft.getDistance() >= 1600 ) && (encoderLeft.getDistance() < 2180 )) {
+			myDrive.tankDrive(0.6, -0.6);
+		} else if((encoderLeft.getDistance() >= 2180 ) && (encoderLeft.getDistance() < 3000 )) {
+				myDrive.arcadeDrive(.5, angle*kP);
+		} else if((encoderLeft.getDistance() >= 3000 ) && (encoderLeft.getDistance() < 3200 )) {
+			myDrive.arcadeDrive(.6, angle*kP);
+		} else if((encoderLeft.getDistance() >= 3200 ) && (encoderLeft.getDistance() < 3600 )) {
+			myDrive.arcadeDrive(.7, angle*kP);
+		} else {
+			myDrive.tankDrive (0,0);
+		} 
+		
+			*/
+		}
+	public void teleopInit() {
+		testTimer.reset();
+		testTimer.start();
+	}
+	public void teleopPeriodic() {
+		
+		//Gyro output
+		System.out.println(Math.round(gyro1.getAngle())) ;
+		
+		//Joy 1 Controls
+		myDrive.arcadeDrive(-joy1.getRawAxis(1), joy1.getRawAxis(2));
+		
+		SmartDashboard.putNumber("My Value", left.get());
+		SmartDashboard.putNumber("Left Encoder", encoderLeft.getDistance());
+		SmartDashboard.putNumber("Right Encoder", encoderRight.getDistance());
+		SmartDashboard.putNumber("Encoder3", encoder3.getDistance());
+		
+		
+		if (joy1.getRawButton(11) == true) {
+			encoderLeft.reset();
+			encoderRight.reset();
+			
+		if (joy1.getRawButton(1) == true) {
+			rightLine.set(-.9);
+			leftLine.set(-.9);
+		} else {
+			rightLine.set(0);
+			leftLine.set(0);
+		}
+		if (joy1.getRawButton(2)== true) {
+			rightLine.set(.9);
+			leftLine.set(.9);
+		} else {
+			rightLine.set(0);
+			leftLine.set(0);
+		}
+		}
+
+
+		//Joy 2 Controls
+		if (joy2.getRawButton(2) == true) {
+			leftLine.set(-.85);
+			rightLine.set(-.9);
+		} else {
+			leftLine.set(0);
+			rightLine.set(0);
+		}
+		if (joy2.getRawButton(5) == true) {
+			leftLine.setInverted(true);
+			rightLine.setInverted(true);
+		} else {
+			leftLine.setInverted(false);
+			rightLine.setInverted(false);
+		}
+		if (joy2.getRawButton(1) == true) {
+			chainMotor.set(.45);
+		} else {
+			chainMotor.stopMotor();
+		}
+		if (joy2.getRawButton(6)) {
+			chainMotor.setInverted(true);
+		} else {
+			chainMotor.setInverted(false);
+		}	
+	}
+	
+	public void testPeriodic() {
+		
+	}
+}
+	/*	if(teamPosition != 2) {
+			if(autonTimer.get() < 2) {
+				myDrive.arcadeDrive(-.8, angle*kP);
+			}
+		} else {	
+		if(switchData.charAt(0) == 'L') {
+				switch(autonStep) {
+					case autonForw: 
+						System.out.println("Left");
+						myDrive.arcadeDrive(-.6, angle*kP);
+						if(autonTimer.hasPeriodPassed(1.5)) {
+						autonStep++;
+						left.disable();
+						right.disable();
+						}
+						break;
+					case autonStop: 
+						if(autonTimer.hasPeriodPassed(2)) {
+						autonStep++;
+						}
+						break;
+					case autonTurn:
+						myDrive.arcadeDrive(0, -.6);
+						if(autonTimer.hasPeriodPassed(1.6)) {
+						autonStep++;
+						}
+						break;
+					case autonForwT:
+						myDrive.arcadeDrive(-.6, 0);
+						if(autonTimer.hasPeriodPassed(2.4)) {
+							left.disable();
+							right.disable();
+							autonStep++;
+						}
+						break;
+					case autonStopTh:
+						if(autonTimer.hasPeriodPassed(1)) {
+						autonStep++;
+						}
+						break;
+					case autonTurnT:
+						myDrive.arcadeDrive(0, .6);
+						if(autonTimer.hasPeriodPassed(1)) {
+						autonStep++;
+						}
+						break;
+					case autonDrpCb:
+						myDrive.arcadeDrive(-.6, 0);
+						if(autonTimer.hasPeriodPassed(1)) {
+							leftLine.set(.75);
+							rightLine.set(.8);
+						autonStep++;
+						}
+						break;
+					case autonStopT:
+						left.disable();
+						right.disable();
+						leftLine.setDisabled();
+						rightLine.setDisabled();
+						break;
+					}
+			}else{
+				switch(autonStep) {
+				case autonForw: 
+					System.out.println("Right");
+					myDrive.arcadeDrive(-.6, angle*kP);
+					if(autonTimer.hasPeriodPassed(1.5)) {
+					autonStep++;
+					left.disable();
+					right.disable();
+					}
+					break;
+				case autonStop: 
+					if(autonTimer.hasPeriodPassed(2)) {
+					autonStep++;
+					}
+					break;
+				case autonTurn:
+					myDrive.arcadeDrive(0, .6);
+					if(autonTimer.hasPeriodPassed(1.6)) {
+					autonStep++;
+					}
+					break;
+				case autonForwT:
+					myDrive.arcadeDrive(-.6, 0);
+					if(autonTimer.hasPeriodPassed(2.4)) {
+						left.disable();
+						right.disable();
+						autonStep++;
+					}
+					break;
+				case autonStopTh:
+					if(autonTimer.hasPeriodPassed(1)) {
+					autonStep++;
+					}
+					break;
+				case autonTurnT:
+					myDrive.arcadeDrive(0, -.6);
+					if(autonTimer.hasPeriodPassed(1)) {
+					autonStep++;
+					}
+					break;
+				case autonDrpCb:
+					myDrive.arcadeDrive(-.6, 0);
+					if(autonTimer.hasPeriodPassed(1)) {
+						leftLine.set(.75);
+						rightLine.set(.8);
+					autonStep++;
+					}
+					break;
+				case autonStopT:
+					left.disable();
+					right.disable();
+					leftLine.setDisabled();
+					rightLine.setDisabled();
+					autonTimer.stop();
+					break;
+				}
+			}
+		}
+	}
+	
+*/
